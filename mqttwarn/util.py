@@ -7,6 +7,7 @@ import logging
 import os
 import re
 import string
+import threading
 import types
 import typing as t
 from pathlib import Path
@@ -180,15 +181,19 @@ def import_module(name: str, path: t.Optional[t.List[str]] = None) -> types.Modu
         return import_module(remaining_names, path=list(module.__path__))
 
 
-def load_functions(filepath: t.Optional[str] = None) -> t.Optional[types.ModuleType]:
+def load_functions(filepath: t.Optional[t.Union[str, Path]] = None) -> t.Optional[types.ModuleType]:
 
     if not filepath:
         return None
+
+    filepath = str(filepath)
 
     if not os.path.isfile(filepath):
         raise IOError("'{}' not found".format(filepath))
 
     mod_name, file_ext = os.path.splitext(os.path.split(filepath)[-1])
+
+    logger.info(f"Loading functions module {mod_name} from {filepath}")
 
     if file_ext.lower() == ".py":
         py_mod = imp.load_source(mod_name, filepath)
@@ -196,8 +201,11 @@ def load_functions(filepath: t.Optional[str] = None) -> t.Optional[types.ModuleT
     elif file_ext.lower() == ".pyc":
         py_mod = imp.load_compiled(mod_name, filepath)
 
+    elif file_ext.lower() in [".js", ".javascript"]:
+        py_mod = load_source_js(mod_name, filepath)
+
     else:
-        raise ValueError("'{}' does not have the .py or .pyc extension".format(filepath))
+        raise RuntimeError(f"Unable to interpret module file: {filepath}")
 
     return py_mod
 
@@ -251,3 +259,29 @@ def load_file(path: t.Union[str, Path], retry_tries=None, retry_interval=0.075, 
         except:  # pragma: nocover
             pass
     return reader
+
+
+def module_factory(name, variables):
+    """
+    Create a synthetic Python module object.
+
+    Derived from:
+    https://www.oreilly.com/library/view/python-cookbook/0596001673/ch15s03.html
+    """
+    module = imp.new_module(name)
+    module.__dict__.update(variables)
+    module.__file__ = "<synthesized>"
+    return module
+
+
+def load_source_js(mod_name, filepath):
+    """
+    Load a JavaScript module, and import its exported symbols into a synthetic Python module.
+    """
+    import javascript
+
+    js_code = load_file(filepath, retry_tries=0).read().decode("utf-8")
+    module = {}
+    javascript.eval_js(js_code)
+    threading.Event().wait(0.01)
+    return module_factory(mod_name, module["exports"])

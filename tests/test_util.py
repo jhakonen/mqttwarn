@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-# (c) 2018-2022 The mqttwarn developers
+# (c) 2018-2023 The mqttwarn developers
 from __future__ import division
 
 import py_compile
 import re
+import sys
 import time
 from builtins import str
 
@@ -135,9 +136,9 @@ def test_load_functions():
     assert str(excinfo.value) == "'{}' not found".format("unknown.txt")
 
     # Load functions file that is not a python file
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(RuntimeError) as excinfo:
         load_functions(filepath=configfile_full)
-    assert str(excinfo.value) == "'{}' does not have the .py or .pyc extension".format(configfile_full)
+    assert str(excinfo.value) == f"Unable to interpret module file: {configfile_full}"
 
     # Load bad functions file
     with pytest.raises(Exception):
@@ -156,6 +157,46 @@ def test_load_functions_pyc(tmp_path):
 
     py_mod = load_functions(filepath=funcfile_pyc)
     assert py_mod is not None
+
+
+@pytest.mark.skipif(sys.version_info < (3, 7), reason="JavaScript support only works on Python >= 3.7")
+def test_load_functions_javascript_success(tmp_path):
+    """
+    Verify that JavaScript module loading, including symbol exporting and invocation, works well.
+    """
+    jsfile = tmp_path / "test.js"
+    jsfile.write_text("module.exports = { forty_two: function() { return 42; } };")
+    jsmod = load_functions(jsfile)
+    assert jsmod.forty_two() == 42
+
+
+@pytest.mark.skipif(sys.version_info < (3, 7), reason="JavaScript support only works on Python >= 3.7")
+def test_load_functions_javascript_compile_failure(tmp_path):
+    """
+    Verify that JavaScript module loading, including symbol exporting and invocation, works well.
+    """
+    from javascript.errors import JavaScriptError
+
+    jsfile = tmp_path / "test.js"
+    jsfile.write_text("Hotzenplotz")
+    with pytest.raises(JavaScriptError) as ex:
+        load_functions(jsfile)
+    assert ex.match("ReferenceError: Hotzenplotz is not defined")
+
+
+@pytest.mark.skipif(sys.version_info < (3, 7), reason="JavaScript support only works on Python >= 3.7")
+def test_load_functions_javascript_runtime_failure(tmp_path):
+    """
+    Verify that JavaScript module loading, including symbol exporting and invocation, works well.
+    """
+    from javascript.errors import JavaScriptError
+
+    jsfile = tmp_path / "test.js"
+    jsfile.write_text("module.exports = { foo: function() { bar(); } };")
+    jsmod = load_functions(jsfile)
+    with pytest.raises(JavaScriptError) as ex:
+        jsmod.foo()
+    assert ex.match("ReferenceError: bar is not defined")
 
 
 def test_load_function():

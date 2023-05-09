@@ -12,6 +12,7 @@ in progress
   As per RFC 7568, SSLv3 has been deprecated in 2015 already.
 - Tests: Add more test cases to increase mqttwarn core coverage to ~100%
 - Improve example "Forward OwnTracks low-battery warnings to ntfy"
+- [udf] Unlock JavaScript for user-defined functions. Thanks, @extremeheat.
 
 
 2023-04-28 0.34.0
