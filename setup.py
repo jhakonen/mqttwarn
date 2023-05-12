@@ -55,6 +55,9 @@ extras = {
     "javascript": [
         "javascript==1!1.0.1; python_version>='3.7'",
     ],
+    "lua": [
+        "lupa<3",
+    ],
     "mysql": [
         "mysql",
     ],
@@ -200,6 +203,9 @@ setup(
         "Operating System :: MacOS",
         "Operating System :: Microsoft :: Windows",
         "Programming Language :: JavaScript",
+        "Programming Language :: Lua",
+        "Programming Language :: Other",
+        "Programming Language :: Other Scripting Engines",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",

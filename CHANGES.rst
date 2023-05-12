@@ -13,6 +13,7 @@ in progress
 - Tests: Add more test cases to increase mqttwarn core coverage to ~100%
 - Improve example "Forward OwnTracks low-battery warnings to ntfy"
 - [udf] Unlock JavaScript for user-defined functions. Thanks, @extremeheat.
+- [udf] Unlock Lua for user-defined functions. Thanks, @scoder.
 
 
 2023-04-28 0.34.0
